@@ -75,6 +75,8 @@ df[
 
 
 # %%
+# Run 2
+
 df[
     (
         df['abstract'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
@@ -89,6 +91,8 @@ df[
 
 
 # %%
+# Run 1
+
 df[
     (
         df['abstract'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
@@ -100,6 +104,22 @@ df[
         df['keywords'].str.contains('educat\w*|tutor\w*|instruct\w*|learning system\w*|learning environment\w*', case=False)
     )
 ]
+
+
+# %%
+df.isna().sum()
+
+# FIXME: Lots of missing data!
+
+
+# %%
+for i in [acm_df, ebsco_df, scopus_df, wos_df]:
+    print(i['source'].iloc[0])
+    print('======')
+    print(i.isna().sum())
+    print()
+
+# Looks like all the missing titles and most of the other missing data is coming from EBSCO
 
 
 # %%

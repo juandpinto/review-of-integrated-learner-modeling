@@ -65,12 +65,41 @@ df = df[~duplicates_S].reset_index(drop=True)
 
 
 # %%
-df['title'].str.contains('knowledge tracing|learner model*|student model*').sum()
+df[
+    (
+        df['abstract'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
+        df['title'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
+        df['keywords'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False)
+    )
+]
 
 
 # %%
-df['abstract'].str.contains('knowledge tracing|learner model*|student model*') | df['title'].str.contains('knowledge tracing|learner model*|student model*')
+df[
+    (
+        df['abstract'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
+        df['title'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
+        df['keywords'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False)
+    ) & (
+        df['abstract'].str.contains('educat\w*|tutor\w*|instruct\w*', case=False) |
+        df['title'].str.contains('educat\w*|tutor\w*|instruct\w*', case=False) |
+        df['keywords'].str.contains('educat\w*|tutor\w*|instruct\w*', case=False)
+    )
+]
 
 
 # %%
-df[~(df['abstract'].str.contains('knowledge tracing|learner model.*|student model.*', case=False) | df['title'].str.contains('knowledge tracing|learner model.*|student model.*', case=False) | df['keywords'].str.contains('knowledge tracing|learner model.*|student model.*', case=False))]
+df[
+    (
+        df['abstract'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
+        df['title'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
+        df['keywords'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False)
+    ) & (
+        df['abstract'].str.contains('educat\w*|tutor\w*|instruct\w*|learning system\w*|learning environment\w*', case=False) |
+        df['title'].str.contains('educat\w*|tutor\w*|instruct\w*|learning system\w*|learning environment\w*', case=False) |
+        df['keywords'].str.contains('educat\w*|tutor\w*|instruct\w*|learning system\w*|learning environment\w*', case=False)
+    )
+]
+
+
+# %%

@@ -91,6 +91,12 @@ df = df[~duplicates_S].reset_index(drop=True)
 # Convert missing keywords to empty strings
 df['keywords'] = df['keywords'].apply(lambda x: x if type(x)==list else [])
 
+
+# %%
+# Remove cases of missing authors/title/abstract
+df = df[~df[['authors', 'title', 'abstract']].isna().any(axis=1)]
+
+
 # %%
 search1 = 'knowledge tracing|learner model\w*|student model\w*'
 
@@ -108,7 +114,7 @@ df[
 search1 = 'knowledge tracing|learner model\w*|student model\w*'
 search2 = 'educat\w*|tutor\w*|instruct\w*|learning system\w*|learning environment\w*'
 
-df[
+run = df[
     (
         df['abstract'].str.contains(search1, case=False) |
         df['title'].str.contains(search1, case=False) |
@@ -126,7 +132,7 @@ df[
 search1 = 'knowledge tracing|learner model\w*|student model\w*'
 search2 = 'educat\w*|tutor\w*|instruct\w*'
 
-df[
+run = df[
     (
         df['abstract'].str.contains(search1, case=False) |
         df['title'].str.contains(search1, case=False) |

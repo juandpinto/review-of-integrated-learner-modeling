@@ -3,12 +3,10 @@ import pandas as pd
 import numpy as np
 
 acm_df = pd.read_csv('database-search/ACM_Run1_168.csv')
-ebsco_df = pd.read_csv('database-search/EBSCO_Run1_3087.csv')
+ebsco_df = pd.read_csv('database-search/EBSCO_Run1_partial.csv')
 scopus_df = pd.read_csv('database-search/Scopus_Run1a_3661.csv')
 wos_df = pd.read_csv('database-search/WebOfScience_Run1a_786.csv')
-
-# FIXME: IEEE CSV isn't correctly formatted. Too many entries in line 266.
-# ieee_df = pd.read_csv('database-search/IEEE_Run1_565.csv')
+ieee_df = pd.read_csv('database-search/IEEE_Run1_565.csv')
 
 
 # %%
@@ -48,8 +46,16 @@ wos_df['source'] = 'WOS'
 
 
 # %%
+# Extract and organize relevant fields (IEEE)
+
+ieee_df = ieee_df[['Authors', 'Document Title', 'Publication Year', 'Abstract', 'Author Keywords', 'Publication Title']]
+ieee_df.columns = ['authors', 'title', 'year', 'abstract', 'keywords', 'publication']
+ieee_df['source'] = 'IEEE'
+
+
+# %%
 # Concatenate all data
-df = pd.concat([acm_df, ebsco_df, scopus_df, wos_df])
+df = pd.concat([acm_df, ebsco_df, scopus_df, wos_df, ieee_df])
 df = df.reset_index(drop=True)
 
 
@@ -75,22 +81,6 @@ df[
 
 
 # %%
-# Run 2
-
-df[
-    (
-        df['abstract'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
-        df['title'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
-        df['keywords'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False)
-    ) & (
-        df['abstract'].str.contains('educat\w*|tutor\w*|instruct\w*', case=False) |
-        df['title'].str.contains('educat\w*|tutor\w*|instruct\w*', case=False) |
-        df['keywords'].str.contains('educat\w*|tutor\w*|instruct\w*', case=False)
-    )
-]
-
-
-# %%
 # Run 1
 
 df[
@@ -102,6 +92,22 @@ df[
         df['abstract'].str.contains('educat\w*|tutor\w*|instruct\w*|learning system\w*|learning environment\w*', case=False) |
         df['title'].str.contains('educat\w*|tutor\w*|instruct\w*|learning system\w*|learning environment\w*', case=False) |
         df['keywords'].str.contains('educat\w*|tutor\w*|instruct\w*|learning system\w*|learning environment\w*', case=False)
+    )
+]
+
+
+# %%
+# Run 2
+
+df[
+    (
+        df['abstract'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
+        df['title'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
+        df['keywords'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False)
+    ) & (
+        df['abstract'].str.contains('educat\w*|tutor\w*|instruct\w*', case=False) |
+        df['title'].str.contains('educat\w*|tutor\w*|instruct\w*', case=False) |
+        df['keywords'].str.contains('educat\w*|tutor\w*|instruct\w*', case=False)
     )
 ]
 

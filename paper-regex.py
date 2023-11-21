@@ -1,6 +1,7 @@
 # %%
 import pandas as pd
 import numpy as np
+import re
 
 acm_df = pd.read_csv('database-search/ACM_Run1_168.csv')
 ebsco_df = pd.read_csv('database-search/EBSCO_Run1_partial.csv')
@@ -11,6 +12,9 @@ ieee_df = pd.read_csv('database-search/IEEE_Run1_565.csv')
 
 # %%
 # Extract and organize relevant fields (ACM)
+
+# Convert keywords to list
+acm_df['Keywords'] = acm_df['Keywords'].str.split(', ')
 
 # Combine into single column to replace NaNs
 acm_df['Journal'] = acm_df['Journal'].combine_first(acm_df['Proceedings title'])
@@ -23,6 +27,9 @@ acm_df['source'] = 'ACM'
 # %%
 # Extract and organize relevant fields (EBSCO)
 
+# Convert keywords to list
+ebsco_df['Keywords'] = ebsco_df['Keywords'].str.replace(', ', '; ').str.split('; ')
+
 ebsco_df = ebsco_df[['Authors', 'Title', 'Publication year', 'Abstract', 'Keywords', 'Journal']]
 ebsco_df.columns = ['authors', 'title', 'year', 'abstract', 'keywords', 'publication']
 ebsco_df['source'] = 'EBSCO'
@@ -30,6 +37,15 @@ ebsco_df['source'] = 'EBSCO'
 
 # %%
 # Extract and organize relevant fields (Scopus)
+
+# Convert keywords to list
+scopus_df['Index Keywords'] = scopus_df['Index Keywords'].str.split('; ')
+scopus_df['Author Keywords'] = scopus_df['Author Keywords'].str.split('; ')
+
+# Combine keywords into single column
+scopus_df['keywords'] = scopus_df['Index Keywords'] + scopus_df['Author Keywords']
+# Remove duplicate keywords
+scopus_df['keywords'] = scopus_df['keywords'].apply(lambda x: pd.Series(x).unique().tolist())
 
 scopus_df = scopus_df[['Authors', 'Title', 'Year', 'Abstract', 'Index Keywords', 'Source title']]
 scopus_df.columns = ['authors', 'title', 'year', 'abstract', 'keywords', 'publication']
@@ -39,7 +55,7 @@ scopus_df['source'] = 'Scopus'
 # %%
 # Extract and organize relevant fields (WOS)
 
-# FIXME: is there a better field here than 'Author Keywords'?
+# FIXME: all keywords are missing
 wos_df = wos_df[['Authors', 'Article Title', 'Publication Year', 'Abstract', 'Author Keywords', 'Source Title']]
 wos_df.columns = ['authors', 'title', 'year', 'abstract', 'keywords', 'publication']
 wos_df['source'] = 'WOS'
@@ -47,6 +63,9 @@ wos_df['source'] = 'WOS'
 
 # %%
 # Extract and organize relevant fields (IEEE)
+
+# Convert keywords to list
+ieee_df['Author Keywords'] = ieee_df['Author Keywords'].str.replace(', ', ';').str.split(';')
 
 ieee_df = ieee_df[['Authors', 'Document Title', 'Publication Year', 'Abstract', 'Author Keywords', 'Publication Title']]
 ieee_df.columns = ['authors', 'title', 'year', 'abstract', 'keywords', 'publication']
@@ -69,45 +88,53 @@ print('duplicates:', duplicates_S.sum())
 # Remove duplicates
 df = df[~duplicates_S].reset_index(drop=True)
 
+# Convert missing keywords to empty strings
+df['keywords'] = df['keywords'].apply(lambda x: x if type(x)==list else [])
 
 # %%
+search1 = 'knowledge tracing|learner model\w*|student model\w*'
+
 df[
     (
-        df['abstract'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
-        df['title'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
-        df['keywords'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False)
+        df['abstract'].str.contains(search1, case=False) |
+        df['title'].str.contains(search1, case=False) |
+        df['keywords'].apply(lambda x: pd.Series([re.findall(search1, i, flags=re.I) for i in x]).any())
     )
 ]
 
 
 # %%
 # Run 1
+search1 = 'knowledge tracing|learner model\w*|student model\w*'
+search2 = 'educat\w*|tutor\w*|instruct\w*|learning system\w*|learning environment\w*'
 
 df[
     (
-        df['abstract'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
-        df['title'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
-        df['keywords'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False)
+        df['abstract'].str.contains(search1, case=False) |
+        df['title'].str.contains(search1, case=False) |
+        df['keywords'].apply(lambda x: pd.Series([re.findall(search1, i, flags=re.I) for i in x]).any())
     ) & (
-        df['abstract'].str.contains('educat\w*|tutor\w*|instruct\w*|learning system\w*|learning environment\w*', case=False) |
-        df['title'].str.contains('educat\w*|tutor\w*|instruct\w*|learning system\w*|learning environment\w*', case=False) |
-        df['keywords'].str.contains('educat\w*|tutor\w*|instruct\w*|learning system\w*|learning environment\w*', case=False)
+        df['abstract'].str.contains(search2, case=False) |
+        df['title'].str.contains(search2, case=False) |
+        df['keywords'].apply(lambda x: pd.Series([re.findall(search2, i, flags=re.I) for i in x]).any())
     )
 ]
 
 
 # %%
 # Run 2
+search1 = 'knowledge tracing|learner model\w*|student model\w*'
+search2 = 'educat\w*|tutor\w*|instruct\w*'
 
 df[
     (
-        df['abstract'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
-        df['title'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False) |
-        df['keywords'].str.contains('knowledge tracing|learner model\w*|student model\w*', case=False)
+        df['abstract'].str.contains(search1, case=False) |
+        df['title'].str.contains(search1, case=False) |
+        df['keywords'].apply(lambda x: pd.Series([re.findall(search1, i, flags=re.I) for i in x]).any())
     ) & (
-        df['abstract'].str.contains('educat\w*|tutor\w*|instruct\w*', case=False) |
-        df['title'].str.contains('educat\w*|tutor\w*|instruct\w*', case=False) |
-        df['keywords'].str.contains('educat\w*|tutor\w*|instruct\w*', case=False)
+        df['abstract'].str.contains(search2, case=False) |
+        df['title'].str.contains(search2, case=False) |
+        df['keywords'].apply(lambda x: pd.Series([re.findall(search2, i, flags=re.I) for i in x]).any())
     )
 ]
 
@@ -119,11 +146,7 @@ df.isna().sum()
 
 
 # %%
-for i in [acm_df, ebsco_df, scopus_df, wos_df]:
-    print(i['source'].iloc[0])
-    print('======')
-    print(i.isna().sum())
-    print()
+df.groupby('source').apply(lambda x: x.isna().sum())
 
 # Looks like all the missing titles and most of the other missing data is coming from EBSCO
 

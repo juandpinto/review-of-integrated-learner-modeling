@@ -172,3 +172,58 @@ run
 
 
 # %%
+# Run 3
+search1 = 'knowledge tracing|learner model\w*|student model\w*'
+search2 = 'educat\w*|tutor\w*|instruct\w*'
+search3 = 'adapt\w*|personaliz\w*|recommend\w*'
+
+run = df[
+    (
+        df['abstract'].str.contains(search1, case=False) |
+        df['title'].str.contains(search1, case=False) |
+        df['keywords'].apply(lambda x: pd.Series([re.findall(search1, i, flags=re.I) for i in x]).any())
+    ) & (
+        df['abstract'].str.contains(search2, case=False) |
+        df['title'].str.contains(search2, case=False) |
+        df['keywords'].apply(lambda x: pd.Series([re.findall(search2, i, flags=re.I) for i in x]).any())
+    ) & (
+        df['abstract'].str.contains(search3, case=False) |
+        df['title'].str.contains(search3, case=False) |
+        df['keywords'].apply(lambda x: pd.Series([re.findall(search3, i, flags=re.I) for i in x]).any())
+    )
+]
+
+run
+
+
+# %%
+# Run 4
+search1 = 'knowledge tracing|learner model\w*|student model\w*'
+search2 = 'educat\w*|tutor\w*|instruct\w*'
+search3 = 'adapt\w*|personaliz\w*|recommend\w*'
+search4 = 'integrat\w*|comprehensive|combin\w*|context-aware|unif\w*|unit\w*|consolidat\w*|amalgamat\w*|join\w*|merg\w*|fus\w*|blend\w*|mesh\w*|coherent|dependency|interdependency|hierarchical|whole learner|holistic|multi-faceted'
+
+run = df[
+    (
+        df['abstract'].str.contains(search1, case=False) |
+        df['title'].str.contains(search1, case=False) |
+        df['keywords'].apply(lambda x: pd.Series([re.findall(search1, i, flags=re.I) for i in x]).any())
+    ) & (
+        df['abstract'].str.contains(search2, case=False) |
+        df['title'].str.contains(search2, case=False) |
+        df['keywords'].apply(lambda x: pd.Series([re.findall(search2, i, flags=re.I) for i in x]).any())
+    ) & (
+        df['abstract'].str.contains(search3, case=False) |
+        df['title'].str.contains(search3, case=False) |
+        df['keywords'].apply(lambda x: pd.Series([re.findall(search3, i, flags=re.I) for i in x]).any())
+    ) & (
+        df['abstract'].str.contains(search4, case=False) |
+        df['title'].str.contains(search4, case=False) |
+        df['keywords'].apply(lambda x: pd.Series([re.findall(search4, i, flags=re.I) for i in x]).any())
+    )
+]
+
+run
+
+
+# %%

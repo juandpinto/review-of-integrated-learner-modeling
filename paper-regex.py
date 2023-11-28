@@ -4,7 +4,7 @@ import numpy as np
 import re
 
 acm_df = pd.read_csv('database-search/ACM_Run1_168.csv')
-ebsco_df = pd.read_csv('database-search/EBSCO_Run1_partial.csv')
+ebsco_df = pd.read_csv('database-search/EBSCO_Run1a_615.csv')
 scopus_df = pd.read_csv('database-search/Scopus_Run1a_3661.csv')
 wos_df = pd.read_csv('database-search/WebOfScience_Run1a_786.csv')
 ieee_df = pd.read_csv('database-search/IEEE_Run1_565.csv')
@@ -14,7 +14,7 @@ ieee_df = pd.read_csv('database-search/IEEE_Run1_565.csv')
 # Extract and organize relevant fields (ACM)
 
 # Convert keywords to list
-acm_df['Keywords'] = acm_df['Keywords'].str.split(', ')
+acm_df['Keywords'] = acm_df['Keywords'].fillna('').str.split(', ')
 
 # Combine into single column to replace NaNs
 acm_df['Journal'] = acm_df['Journal'].combine_first(acm_df['Proceedings title'])
@@ -28,9 +28,20 @@ acm_df['source'] = 'ACM'
 # Extract and organize relevant fields (EBSCO)
 
 # Convert keywords to list
-ebsco_df['Keywords'] = ebsco_df['Keywords'].str.replace(', ', '; ').str.split('; ')
+ebsco_df['Keywords'] = ebsco_df['Keywords'].fillna('').str.split('; ')
+ebsco_df['Subjects'] = ebsco_df['Subjects'].fillna('').str.split('; ')
 
-ebsco_df = ebsco_df[['Authors', 'Title', 'Publication year', 'Abstract', 'Keywords', 'Journal']]
+# Combine keywords into single column
+ebsco_df['keywords'] = ebsco_df['Keywords'] + ebsco_df['Subjects']
+# Remove duplicate keywords
+ebsco_df['keywords'] = ebsco_df['keywords'].apply(lambda x: pd.Series(x).unique().tolist())
+# Remove empty keywords
+ebsco_df['keywords'] = ebsco_df['keywords'].apply(lambda x: [i for i in x if i != ''])
+
+# Extract publication year
+ebsco_df['Publication Date'] = ebsco_df['Publication Date'].str.findall('20[012][0-9]').apply(lambda x: x[-1])
+
+ebsco_df = ebsco_df[['Author', 'Article Title', 'Publication Date', 'Abstract', 'Keywords', 'Journal Title']]
 ebsco_df.columns = ['authors', 'title', 'year', 'abstract', 'keywords', 'publication']
 ebsco_df['source'] = 'EBSCO'
 
@@ -39,8 +50,8 @@ ebsco_df['source'] = 'EBSCO'
 # Extract and organize relevant fields (Scopus)
 
 # Convert keywords to list
-scopus_df['Index Keywords'] = scopus_df['Index Keywords'].str.split('; ')
-scopus_df['Author Keywords'] = scopus_df['Author Keywords'].str.split('; ')
+scopus_df['Index Keywords'] = scopus_df['Index Keywords'].fillna('').str.split('; ')
+scopus_df['Author Keywords'] = scopus_df['Author Keywords'].fillna('').str.split('; ')
 
 # Combine keywords into single column
 scopus_df['keywords'] = scopus_df['Index Keywords'] + scopus_df['Author Keywords']
@@ -65,7 +76,7 @@ wos_df['source'] = 'WOS'
 # Extract and organize relevant fields (IEEE)
 
 # Convert keywords to list
-ieee_df['Author Keywords'] = ieee_df['Author Keywords'].str.replace(', ', ';').str.split(';')
+ieee_df['Author Keywords'] = ieee_df['Author Keywords'].fillna('').str.replace(', ', ';').str.split(';')
 
 ieee_df = ieee_df[['Authors', 'Document Title', 'Publication Year', 'Abstract', 'Author Keywords', 'Publication Title']]
 ieee_df.columns = ['authors', 'title', 'year', 'abstract', 'keywords', 'publication']
@@ -90,6 +101,17 @@ df = df[~duplicates_S].reset_index(drop=True)
 
 # Convert missing keywords to empty strings
 df['keywords'] = df['keywords'].apply(lambda x: x if type(x)==list else [])
+df['keywords'] = df['keywords'].apply(lambda x: [] if x == [''] else x)
+
+# Convert years to int
+df['year'] = df['year'].astype(int)
+
+
+# %%
+# df.isna().sum()
+df.groupby('source').apply(lambda x: x.isna().sum())
+
+# Looks like all the missing titles and most of the other missing data is coming from EBSCO
 
 
 # %%
@@ -126,6 +148,8 @@ run = df[
     )
 ]
 
+run
+
 
 # %%
 # Run 2
@@ -144,17 +168,7 @@ run = df[
     )
 ]
 
-
-# %%
-df.isna().sum()
-
-# FIXME: Lots of missing data!
-
-
-# %%
-df.groupby('source').apply(lambda x: x.isna().sum())
-
-# Looks like all the missing titles and most of the other missing data is coming from EBSCO
+run
 
 
 # %%

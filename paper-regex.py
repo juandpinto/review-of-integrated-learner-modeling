@@ -4,10 +4,12 @@ import numpy as np
 import re
 
 acm_df = pd.read_csv('database-search/ACM_Run1_168.csv')
-ebsco_df = pd.read_csv('database-search/EBSCO_Run1a_615.csv')
+ieee_df = pd.read_csv('database-search/IEEE_Run1_565.csv')
 scopus_df = pd.read_csv('database-search/Scopus_Run1a_3661.csv')
 wos_df = pd.read_csv('database-search/WebOfScience_Run1a_786.csv')
-ieee_df = pd.read_csv('database-search/IEEE_Run1_565.csv')
+ebsco_df = pd.read_csv('database-search/EBSCO_Run1a_615.csv')
+# Keep original EBSCO export (with lots of missing data) since we included it in our triage dataset
+ebsco_df_original = pd.read_csv('database-search/EBSCO_Run1_partial.csv')
 
 
 # %%
@@ -44,6 +46,24 @@ ebsco_df['Publication Date'] = ebsco_df['Publication Date'].str.findall('20[012]
 ebsco_df = ebsco_df[['Author', 'Article Title', 'Publication Date', 'Abstract', 'Keywords', 'Journal Title']]
 ebsco_df.columns = ['authors', 'title', 'year', 'abstract', 'keywords', 'publication']
 ebsco_df['source'] = 'EBSCO'
+
+
+# %%
+# Extract and organize relevant fields (EBSCO-original)
+
+# Convert keywords to list
+ebsco_df_original['Keywords'] = ebsco_df_original['Keywords'].fillna('').str.split('; ')
+
+# Combine keywords into single column
+ebsco_df_original['keywords'] = ebsco_df_original['Keywords']
+# Remove duplicate keywords
+ebsco_df_original['keywords'] = ebsco_df_original['keywords'].apply(lambda x: pd.Series(x).unique().tolist())
+# Remove empty keywords
+ebsco_df_original['keywords'] = ebsco_df_original['keywords'].apply(lambda x: [i for i in x if i != ''])
+
+ebsco_df_original = ebsco_df_original[['Authors', 'Title', 'Publication year', 'Abstract', 'Keywords', 'Journal']]
+ebsco_df_original.columns = ['authors', 'title', 'year', 'abstract', 'keywords', 'publication']
+ebsco_df_original['source'] = 'EBSCO'
 
 
 # %%
@@ -85,20 +105,27 @@ ieee_df['source'] = 'IEEE'
 
 # %%
 # Concatenate all data
-df = pd.concat([acm_df, ebsco_df, scopus_df, wos_df, ieee_df])
+df = pd.concat([acm_df, ieee_df, scopus_df, wos_df, ebsco_df, ebsco_df_original])
 df = df.reset_index(drop=True)
 
 
 # %%
-# Get duplicates
-unique_S = df['title'].str.lower() + df['year'].astype('str')
+# Function for removing duplicates
+def remove_duplicates(df):
+    df = df.reset_index(drop=True)
+    # Get duplicates
+    unique_S = df['title'].str.lower() + df['year'].astype('str')
 
-duplicates_S = pd.Series([unique_S.iloc[i] in unique_S.iloc[:i].values for i in range(len(unique_S))])
-print('duplicates:', duplicates_S.sum())
+    duplicates_S = pd.Series([unique_S.iloc[i] in unique_S.iloc[:i].values for i in range(len(unique_S))])
+    print('duplicates:', duplicates_S.sum())
 
-# Remove duplicates
-df = df[~duplicates_S].reset_index(drop=True)
+    # Remove duplicates
+    df = df[~duplicates_S].reset_index(drop=True)
 
+    return df
+
+
+# %%
 # Convert missing keywords to empty strings
 df['keywords'] = df['keywords'].apply(lambda x: x if type(x)==list else [])
 df['keywords'] = df['keywords'].apply(lambda x: [] if x == [''] else x)
@@ -111,24 +138,10 @@ df['year'] = df['year'].astype(int)
 # df.isna().sum()
 df.groupby('source').apply(lambda x: x.isna().sum())
 
-# Looks like all the missing titles and most of the other missing data is coming from EBSCO
-
 
 # %%
 # Remove cases of missing authors/title/abstract
 df = df[~df[['authors', 'title', 'abstract']].isna().any(axis=1)]
-
-
-# %%
-search1 = 'knowledge tracing|learner model\w*|student model\w*'
-
-df[
-    (
-        df['abstract'].str.contains(search1, case=False) |
-        df['title'].str.contains(search1, case=False) |
-        df['keywords'].apply(lambda x: pd.Series([re.findall(search1, i, flags=re.I) for i in x]).any())
-    )
-]
 
 
 # %%
@@ -148,7 +161,10 @@ run = df[
     )
 ]
 
-run
+print(run.shape)
+run = remove_duplicates(run)
+
+run.shape
 
 
 # %%
@@ -168,7 +184,10 @@ run = df[
     )
 ]
 
-run
+print(run.shape)
+run = remove_duplicates(run)
+
+run.shape
 
 
 # %%
@@ -193,7 +212,10 @@ run = df[
     )
 ]
 
-run
+print(run.shape)
+run = remove_duplicates(run)
+
+run.shape
 
 
 # %%
@@ -223,7 +245,10 @@ run = df[
     )
 ]
 
-run
+print(run.shape)
+run = remove_duplicates(run)
+
+run.shape
 
 
 # %%
